@@ -7545,6 +7545,23 @@ bool ExtractNativeDependencySymbols(
 		outRecords[recordIndex].classes.push_back(std::move(classSymbol));
 	}
 
+	for (const auto& dataType : sections.program.dataTypes) {
+		const size_t recordIndex = findRecordIndexById(dataType.header.dwId);
+		if (recordIndex >= outRecords.size()) {
+			continue;
+		}
+
+		NativeDependencyStructSymbol structSymbol;
+		structSymbol.id = dataType.header.dwId;
+		structSymbol.memoryAddress = dataType.header.dwUnk;
+		structSymbol.name = TrimAsciiCopy(resolver.ResolveUserName(dataType.header.dwId));
+		structSymbol.memberIds.reserve(dataType.members.size());
+		for (const auto& member : dataType.members) {
+			structSymbol.memberIds.push_back(member.marker);
+		}
+		outRecords[recordIndex].structs.push_back(std::move(structSymbol));
+	}
+
 	for (const auto& function : sections.program.functions) {
 		const size_t recordIndex = findRecordIndexById(function.header.dwId);
 		if (recordIndex >= outRecords.size()) {
@@ -7620,6 +7637,18 @@ bool ExtractNativeDependencySymbols(
 				classSymbol.id = removedItem.id;
 				classSymbol.name = name;
 				outRecords[recordIndex].classes.push_back(std::move(classSymbol));
+			}
+		}
+		else if (idType == epl_system_id::kTypeStruct) {
+			const bool exists = std::any_of(
+				outRecords[recordIndex].structs.begin(),
+				outRecords[recordIndex].structs.end(),
+				[&](const NativeDependencyStructSymbol& item) { return item.id == removedItem.id; });
+			if (!exists) {
+				NativeDependencyStructSymbol structSymbol;
+				structSymbol.id = removedItem.id;
+				structSymbol.name = name;
+				outRecords[recordIndex].structs.push_back(std::move(structSymbol));
 			}
 		}
 		else if (idType == epl_system_id::kTypeMethod) {
@@ -7771,6 +7800,43 @@ bool Generator::GenerateBundle(
 	}
 	outBundle.nativeSourceBytes = std::move(inputBytes);
 	outBundle.nativeBundleDigest = ComputeBundleDigest(outBundle);
+	return true;
+}
+
+bool ValidateNativeMethodBodyBytes(
+	const std::vector<std::uint8_t>& expressionData,
+	std::string* outError)
+{
+	if (outError != nullptr) {
+		outError->clear();
+	}
+	if (expressionData.empty()) {
+		return true;
+	}
+
+	ByteReader reader(expressionData);
+	std::unique_ptr<StatementBlock> block;
+	std::string parseError;
+	if (!ParseStatementBlock(reader, block, &parseError) || block == nullptr) {
+		if (outError != nullptr) {
+			*outError = parseError.empty() ? "function_body_parse_failed" : parseError;
+		}
+		return false;
+	}
+	if (reader.position() != expressionData.size()) {
+		if (outError != nullptr) {
+			std::ostringstream stream;
+			stream << "function_body_trailing_bytes@0x" << std::hex << std::uppercase
+				<< reader.position();
+			if (reader.position() < expressionData.size()) {
+				stream << ":next=0x"
+					<< std::setw(2) << std::setfill('0')
+					<< static_cast<int>(expressionData[reader.position()]);
+			}
+			*outError = stream.str();
+		}
+		return false;
+	}
 	return true;
 }
 

@@ -546,7 +546,6 @@ bool DoUnpackInternal(
 		}
 		bundle.sourcePath = PathToUtf8(effectiveInputPath);
 		bundle.sourceFileKind = e2txt::SourceFileKind::EC;
-		ClearNativeReuseState(bundle);
 		bundle.publicHeaderText = ecBundle.publicHeaderText;
 		workspaceOptions.defaultPackOutputFileName = PathToUtf8(effectiveInputPath.filename()) + ".e";
 	}

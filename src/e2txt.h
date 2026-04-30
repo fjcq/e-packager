@@ -66,6 +66,14 @@ struct NativeDependencyConstantSymbol {
 	std::string name;
 };
 
+// 原生工程里易模块导入的公开数据类型符号。
+struct NativeDependencyStructSymbol {
+	std::int32_t id = 0;
+	std::int32_t memoryAddress = 0;
+	std::string name;
+	std::vector<std::int32_t> memberIds;
+};
+
 // 原生工程里单个易模块依赖的导入符号表。
 struct NativeDependencySymbolRecord {
 	std::string name;
@@ -73,6 +81,7 @@ struct NativeDependencySymbolRecord {
 	bool reExport = false;
 	std::vector<DependencyDefinedIdRange> definedIds;
 	std::vector<NativeDependencyClassSymbol> classes;
+	std::vector<NativeDependencyStructSymbol> structs;
 	std::vector<NativeDependencyMethodSymbol> methods;
 	std::vector<NativeDependencyConstantSymbol> constants;
 };
@@ -291,6 +300,10 @@ bool CaptureNativeSectionSnapshots(
 bool ExtractNativeDependencySymbols(
 	const std::vector<std::uint8_t>& inputBytes,
 	std::vector<NativeDependencySymbolRecord>& outRecords,
+	std::string* outError);
+// 校验单个原生方法体字节码是否可被读侧解析器完整解析。
+bool ValidateNativeMethodBodyBytes(
+	const std::vector<std::uint8_t>& expressionData,
 	std::string* outError);
 
 // e2txt 文档对象。
