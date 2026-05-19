@@ -36,8 +36,8 @@ e-packager MyMod.ec   # 解包到 MyMod\
 | `header/` | 仅 `.ec` 项目生成；公开接口头文件，不参与回包 |
 | `ecom/` | 仅 `.e` 项目生成；每个子目录为一个已解包的模块工作区，不参与回包 |
 | `elib/` | 依赖支持库的公开接口导出，仅供查阅，不参与回包 |
-| `image/` | 图片资源 |
-| `audio/` | 音频资源 |
+| `image/` | 图片资源及任意二进制资源，元数据在 `image/list.json` |
+| `audio/` | 音频资源及任意二进制资源，元数据在 `audio/list.json` |
 | `tool/e-packager.exe` | 随目录自带的封包工具 |
 | `info.json` | 来源文件的类型、路径、修改时间、MD5 |
 | `AGENTS.md` | 供 AI Agent 阅读的项目结构说明 |
@@ -60,7 +60,7 @@ e-packager
 
 ### 刷新派生内容
 
-解包后，若依赖的易模块或支持库发生变化，可用 `update` 命令刷新 `ecom/` 与 `elib/` 中的派生内容，无需重新解包整个工程。
+解包后，若依赖的易模块或支持库发生变化，或需要新增图片、音频等二进制资源，可用 `update` 命令刷新 `ecom/` 与 `elib/` 中的派生内容并写入资源索引，无需重新解包整个工程。
 
 ```
 e-packager update <input-dir>
@@ -87,7 +87,18 @@ e-packager update MyApp\ --add-elib D:\易语言\lib\互联网支持库.fne
 
 # 同时新增模块与支持库
 e-packager update MyApp\ --add-ecom D:\modules\Net.ec --add-elib 互联网支持库
+
+# 新增图片资源，默认使用文件名 stem 作为常量名，代码中写 #logo
+e-packager update MyApp\ --add-image D:\res\logo.png
+
+# 新增音频资源，默认使用文件名 stem 作为常量名，代码中写 #notify
+e-packager update MyApp\ --add-audio D:\res\notify.wav
+
+# 显式指定资源常量名，代码中写 #启动画面
+e-packager update MyApp\ --add-image 启动画面=D:\res\splash.bin
 ```
+
+`--add-image` 与 `--add-audio` 都写入易语言常量资源表，使用方式与普通常量一致，代码中以 `#资源名` 引用。目录名只是决定资源写入 `image/list.json` 还是 `audio/list.json`，实际内容可以是程序需要携带的任意二进制数据。
 
 ### 其他命令
 
