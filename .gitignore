@@ -364,3 +364,6 @@ FodyWeavers.xsd
 
 
 temp/
+
+# Trae AI assistant directory
+.trae/
