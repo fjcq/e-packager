@@ -1,4 +1,4 @@
-﻿#include "e2txt.h"
+#include "e2txt.h"
 
 #include <Windows.h>
 
@@ -4884,20 +4884,33 @@ bool TryEncodeNativeOperatorExpression(
 	std::string* outError)
 {
 	std::vector<std::string> parts;
+	if (TrySplitTopLevelExpressionByToken(expression, "或", parts) && parts.size() > 1) {
+		return TryEncodeNativeOperatorCall(46, parts, context, writer, methodReferences, variableReferences, constantReferences, outError);
+	}
 	if (TrySplitTopLevelExpressionByToken(expression, "||", parts) && parts.size() > 1) {
 		return TryEncodeNativeOperatorCall(46, parts, context, writer, methodReferences, variableReferences, constantReferences, outError);
+	}
+	if (TrySplitTopLevelExpressionByToken(expression, "且", parts) && parts.size() > 1) {
+		return TryEncodeNativeOperatorCall(45, parts, context, writer, methodReferences, variableReferences, constantReferences, outError);
 	}
 	if (TrySplitTopLevelExpressionByToken(expression, "&&", parts) && parts.size() > 1) {
 		return TryEncodeNativeOperatorCall(45, parts, context, writer, methodReferences, variableReferences, constantReferences, outError);
 	}
 
-	constexpr std::array<std::pair<std::string_view, std::int32_t>, 7> kBinaryOperators = {
-		std::pair<std::string_view, std::int32_t>{ "?=", 44 },
+	constexpr std::array<std::pair<std::string_view, std::int32_t>, 14> kBinaryOperators = {
+		std::pair<std::string_view, std::int32_t>{ "≈", 44 },
+		{ "?=", 44 },
+		{ "＝", 38 },
 		{ "==", 38 },
+		{ "≠", 39 },
 		{ "!=", 39 },
+		{ "≤", 42 },
 		{ "<=", 42 },
+		{ "≥", 43 },
 		{ ">=", 43 },
+		{ "＜", 40 },
 		{ "<", 40 },
+		{ "＞", 41 },
 		{ ">", 41 },
 	};
 	for (const auto& [token, methodId] : kBinaryOperators) {
